@@ -67,7 +67,10 @@ ui <- fluidPage(
                         sidebarPanel(
                           radioButtons("colorArea", "Color of areas",
                                        c("Pink"="pink", "Purple"="purple", "Blue"="blue4")
-                          )
+                          ),
+                          sliderInput("rangeNbDeaths",
+                                      "Range of deaths :",
+                                      min = 1,  max = 150, value = c(10,100))
                         ),
                         mainPanel(
                           plotOutput("deathsByLocationPlot")
@@ -90,7 +93,7 @@ ui <- fluidPage(
                         sidebarPanel(
                           checkboxGroupInput("checkSeasons", label = h3("Checkbox group"),
                                              choices = list("Season 1" = 1, "Season 2" = 2, "Season 3" = 3,"Season 4" = 4, "Season 5" = 5, "Season 6" = 6, "Season 7" = 7, "Season 8" = 8),
-                                             selected = 1),
+                                             selected = c(1,2,3)),
                           selectInput("selectedPalette", label = h3("Select palette"),
                                       choices = list("RdPu" = "RdPu", "Spectral" = "Spectral", "Pastel2" = "Pastel2", "Set3"="Set3"),
                                       selected = 1)
@@ -203,10 +206,10 @@ server <- function(input, output) {
   
   output$deathsByLocationPlot <- renderPlot({
     colorArea = "pink"
-    nbDeathsPerLocation <- scenes %>% group_by(location) %>% summarize(nbdeath = sum(nbdeath)) %>% filter(nbdeath != 0) %>% left_join(scenes_loc) %>% st_as_sf()
+    nbDeathsPerLocation <- scenes %>% group_by(location) %>% summarize(nbdeath = sum(nbdeath)) %>% filter(nbdeath != 0 & nbdeath >= input$rangeNbDeaths[1] &  nbdeath <= input$rangeNbDeaths[2]) %>% left_join(scenesLocations) %>% st_as_sf()
     
     locationsOfDeath <- scenes %>% group_by(location) %>% summarize(nbdeath = sum(nbdeath)) %>%
-      left_join(scenes_loc) %>% left_join(locations, by = c("location"="name")) %>% select(location, geometry.x) %>% st_as_sf()
+      left_join(scenesLocations) %>% left_join(locations, by = c("location"="name")) %>% select(location, geometry.x) %>% st_as_sf()
     
     
     ggplot()+geom_sf(data=land,fill=colland,col=borderland,size=0.1) +
