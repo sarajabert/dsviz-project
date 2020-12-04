@@ -44,20 +44,11 @@ collake="#87cdde"
 colland="ivory"
 borderland = "ivory3"
 
-
-# Build a data.frame containing for each location the time of presence on the
-# screen of “Tyrion Lannister”. Load the spatial data 
-# data//GoTRelease/ScenesLocations.shp and join it with the previous table.
-# Finally make a map with proportional symbols to visualize these data.
-
 library(readr)
 appearances = read_csv("./data/appearances.csv")
 characters = read_csv("./data/characters.csv")
 episodes = read_csv("./data/episodes.csv")
 scenes = read_csv("./data/scenes.csv")
-
-
-#palettes = c('Jon Snow', 'Tyrion Lannister', 'Daenerys Targaryen', 'Sansa Stark', 'Cersei Lannister', 'Arya Stark')
 
 
 #load("./got_data.Rdata")
@@ -110,7 +101,30 @@ ui <- fluidPage(
                         
                       )
              ),
-             tabPanel("Alexandre"),
+             tabPanel("Characters plots",
+                      
+                      sidebarLayout(
+                        sidebarPanel(
+                          selectInput("dataset",label="Choose a dataset",choice=c("characters"=1,
+                                                                                  "episodes"=2,
+                                                                                  "scenes"=3,
+                                                                                  "appearances"=4), selectize=FALSE),
+                          
+                          selectInput("choiceName", "Choose a name", choice=c(appearances$name), selected  = NULL),
+                          
+                          selectInput("choiceInfo", "Info to display", choice=c("Time screen" = 1,
+                                                                                "Episodes by season" = 2), selected  = NULL)
+                          
+                          
+                        ),
+                        mainPanel(
+                          h2("Summary of the dataset"),
+                          verbatimTextOutput("sumEpisodes"),
+                          plotOutput("plot1")
+                        )
+                      )
+                      
+             ),
              tabPanel("Romain"),
              tabPanel("Sara")
              
@@ -268,6 +282,53 @@ server <- function(input, output) {
       labs(title = "Number of deaths by episodes", x="Episode number", y="Number of deaths")
     
   })
+  
+  output$sumEpisodes <- renderPrint({
+    if (input$dataset == 1) {
+      summary(characters)
+    } else if (input$dataset == 2) {
+      summary(episodes)
+    } else if (input$dataset == 3) {
+      summary(scenes)
+    } else {
+      summary(appearances)
+    }
+  })
+  
+  output$plot1 <- renderPlot({
+    
+    if(input$choiceInfo == 1){
+      jstime = appearances %>% filter(name==input$choiceName) %>% 
+        left_join(scenes) %>% 
+        group_by(episodeId) %>% 
+        summarise(time=sum(duration))
+      
+      ggplot(jstime) + 
+        geom_line(aes(x=episodeId,y=time))+
+        theme_bw()+
+        xlab("episod")+ylab("time")+
+        ggtitle("Time screen")
+    } else {
+      jstime = appearances %>% filter(name==input$choiceName) %>%
+        left_join(scenes) %>% select(name, episodeId) %>%
+        left_join(episodes)%>% 
+        select(episodeId, seasonNum) %>%
+        unique %>%
+        group_by(seasonNum) %>%
+        summarise(NbEpisode = n())
+      
+      ggplot(jstime, aes(x=seasonNum, y=NbEpisode, fill=NbEpisode)) + 
+        geom_bar(stat="identity", width=0.9)+
+        theme_minimal()+
+        theme_bw()+
+        xlab("season")+ 
+        scale_x_continuous(breaks = c(1:8), labels = c(1:8), limits = c(NA,9)) + 
+        ggtitle("Episode appearance by seasons") 
+      
+    }
+    
+  })
+  
 }
 
 # Run the application 
