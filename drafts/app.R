@@ -61,142 +61,80 @@ ui <- fluidPage(
   #titlePanel("Project of Alexandre, Natacha, Romain and Sara"),
   
   navbarPage("Project DS",
-             
-             tabPanel("Deaths by location",
-                      sidebarLayout(
-                        sidebarPanel(
-                          radioButtons("colorArea", "Color of areas",
-                                       c("Pink"="pink", "Purple"="purple", "Blue"="blue4")
-                          ),
-                          sliderInput("rangeNbDeaths",
-                                      "Range of deaths :",
-                                      min = 1,  max = 150, value = c(10,100))
+             navbarMenu("Deaths",
+                        tabPanel("Deaths by location",
+                                 sidebarLayout(
+                                   sidebarPanel(
+                                     radioButtons("colorArea", "Color of areas",
+                                                  c("Pink"="pink", "Purple"="purple", "Blue"="blue4")
+                                     ),
+                                     sliderInput("rangeNbDeaths",
+                                                 "Range of deaths :",
+                                                 min = 1,  max = 150, value = c(10,100))
+                                   ),
+                                   mainPanel(
+                                     plotOutput("deathsByLocationPlot")
+                                   )
+                                 )
                         ),
-                        mainPanel(
-                          plotOutput("deathsByLocationPlot")
-                        )
-                      )
-             ),
-             tabPanel("Best killers" ,
-                      sidebarLayout(
-                        sidebarPanel(
-                          numericInput("killersNb", "Number of best killers:", 5)
-                        ) ,
-                        mainPanel(
-                          plotOutput("bestKillersPlot")
-                        )
-                      )
-             ),
-             
-             tabPanel("Deaths by episodes",
-                      sidebarLayout(
-                        sidebarPanel(
-                          checkboxGroupInput("checkSeasons", label = h3("Checkbox group"),
-                                             choices = list("Season 1" = 1, "Season 2" = 2, "Season 3" = 3,"Season 4" = 4, "Season 5" = 5, "Season 6" = 6, "Season 7" = 7, "Season 8" = 8),
-                                             selected = c(1,2,3)),
-                          selectInput("selectedPalette", label = h3("Select palette"),
-                                      choices = list("RdPu" = "RdPu", "Spectral" = "Spectral", "Pastel2" = "Pastel2", "Set3"="Set3"),
-                                      selected = 1)
+                        tabPanel("Best killers" ,
+                                 sidebarLayout(
+                                   sidebarPanel(
+                                     numericInput("killersNb", "Number of best killers:", 5)
+                                   ) ,
+                                   mainPanel(
+                                     plotOutput("bestKillersPlot")
+                                   )
+                                 )
                         ),
-                        mainPanel(
-                          plotOutput("deathsByEpisodes")
-                        )
                         
-                      )
-             ),
-             tabPanel("Characters plots",
-                      
-                      sidebarLayout(
-                        sidebarPanel(
-                          selectInput("dataset",label="Choose a dataset",choice=c("characters"=1,
-                                                                                  "episodes"=2,
-                                                                                  "scenes"=3,
-                                                                                  "appearances"=4), selectize=FALSE),
-                          
-                          selectInput("choiceName", "Choose a name", choice=c(appearances$name), selected  = NULL),
-                          
-                          selectInput("choiceInfo", "Info to display", choice=c("Time screen" = 1,
-                                                                                "Episodes by season" = 2), selected  = NULL)
-                          
-                          
-                        ),
-                        mainPanel(
-                          h2("Summary of the dataset"),
-                          verbatimTextOutput("sumEpisodes"),
-                          plotOutput("plot1")
+                        tabPanel("Deaths by episodes",
+                                 sidebarLayout(
+                                   sidebarPanel(
+                                     checkboxGroupInput("checkSeasons", label = h3("Checkbox group"),
+                                                        choices = list("Season 1" = 1, "Season 2" = 2, "Season 3" = 3,"Season 4" = 4, "Season 5" = 5, "Season 6" = 6, "Season 7" = 7, "Season 8" = 8),
+                                                        selected = c(1,2,3)),
+                                     selectInput("selectedPalette", label = h3("Select palette"),
+                                                 choices = list("RdPu" = "RdPu", "Spectral" = "Spectral", "Pastel2" = "Pastel2", "Set3"="Set3"),
+                                                 selected = 1)
+                                   ),
+                                   mainPanel(
+                                     plotOutput("deathsByEpisodes")
+                                   )
+                                   
+                                 )
                         )
-                      )
-                      
              ),
-             tabPanel("Romain"),
-             tabPanel("Sara")
-             
-             # navbarMenu("Deaths",
-             # 
-             #            tabPanel("Deaths by location",
-             #                     sidebarLayout(
-             #                         sidebarPanel(
-             #                             radioButtons("colorArea", "Color of areas",
-             #                                          c("Pink"="pink", "Purple"="purple", "Blue"="blue4")
-             #                             )
-             #                         ),
-             #                         mainPanel(
-             #                             plotOutput("deathsByLocationPlot")
-             #                         )
-             #                     )
-             #            ),
-             #            tabPanel("Best killers" ,
-             #                     sidebarLayout(
-             #                         sidebarPanel(
-             #                             numericInput("killersNb", "Number of best killers:", 5)
-             #                         ) ,
-             #                         mainPanel(
-             #                             plotOutput("bestKillersPlot")
-             #                         )
-             #                     )
-             #            ),
-             # 
-             #             tabPanel("Deaths by episodes",
-             #                      sidebarLayout(
-             #                          sidebarPanel(
-             #                              checkboxGroupInput("checkSeasons", label = h3("Checkbox group"),
-             #                               choices = list("Season 1" = 1, "Season 2" = 2, "Season 3" = 3,"Season 4" = 4, "Season 5" = 5, "Season 6" = 6, "Season 7" = 7, "Season 8" = 8),
-             #                               selected = 1),
-             #                              selectInput("selectedPalette", label = h3("Select palette"),
-             #                                          choices = list("RdPu" = "RdPu", "Spectral" = "Spectral", "Pastel2" = "Pastel2", "Set3"="Set3"),
-             #                                          selected = 1)
-             #                              ),
-             #                          mainPanel(
-             #                              plotOutput("deathsByEpisodes")
-             #                          )
-             # 
-             #                      )
-             #             )
-             # ),
-             # navbarMenu("Alexandre",
-             #            tabPanel("Figure 1",
-             #                     DT::dataTableOutput("table")
-             #            ),
-             #            tabPanel("Figure 2",
-             #                     DT::dataTableOutput("table")
-             #            )
-             # ),
-             # navbarMenu("Romain",
-             #             tabPanel("Figure 1",
-             #                      DT::dataTableOutput("table")
-             #             ),
-             #             tabPanel("Figure 2",
-             #                      DT::dataTableOutput("table")
-             #             )
-             # ),
-             # navbarMenu("Sara",
-             #            tabPanel("Figure 1",
-             #                     DT::dataTableOutput("table")
-             #            ),
-             #            tabPanel("Figure 2",
-             #                     DT::dataTableOutput("table")
-             #            )
-             # )
+             navbarMenu("Characters plots",
+                        tabPanel("Characters plots",
+                                 
+                                 sidebarLayout(
+                                   sidebarPanel(
+                                     selectInput("dataset",label="Choose a dataset",choice=c("characters"=1,
+                                                                                             "episodes"=2,
+                                                                                             "scenes"=3,
+                                                                                             "appearances"=4), selectize=FALSE),
+                                     
+                                     selectInput("choiceName", "Choose a name", choice=c(appearances$name), selected  = NULL),
+                                     
+                                     selectInput("choiceInfo", "Info to display", choice=c("Time screen" = 1,
+                                                                                           "Episodes by season" = 2), selected  = NULL)
+                                     
+                                     
+                                   ),
+                                   mainPanel(
+                                     h2("Summary of the dataset"),
+                                     verbatimTextOutput("sumEpisodes"),
+                                     plotOutput("plot1")
+                                   )
+                                 )
+                                 
+                        )
+             ),
+             navbarMenu("Geographical plots",
+                        tabPanel("Density"),
+                        tabPanel("Type of landscapes")
+             )
   )
   
 )
