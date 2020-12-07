@@ -92,7 +92,7 @@ ui <- fluidPage(
                                      numericInput("killersNb", "Number of best killers:", 5)
                                    ) ,
                                    mainPanel(
-                                     plotOutput("bestKillersPlot")
+                                     plotOutput("bestKillersPlot", height = "auto")
                                    )
                                  )
                         ),
@@ -108,14 +108,14 @@ ui <- fluidPage(
                                                  selected = 1)
                                    ),
                                    mainPanel(
-                                     plotOutput("deathsByEpisodes")
+                                     plotOutput("deathsByEpisodes", height = "auto")
                                    )
                                    
                                  )
                         )
              ),
              navbarMenu("Characters",
-                        tabPanel("Characters plots",
+                        tabPanel("Characters info",
                                  
                                  sidebarLayout(
                                    sidebarPanel(
@@ -124,7 +124,11 @@ ui <- fluidPage(
                                                                                              "scenes"=3,
                                                                                              "appearances"=4), selectize=FALSE),
                                      
-                                     selectInput("choiceName", "Choose a name", choice=c(appearances$name), selected  = NULL),
+                                     selectInput("choiceName", "Choose a name", choice=c(appearances %>% 
+                                                                                           group_by(name) %>%
+                                                                                           count(name,wt=sceneId) %>%
+                                                                                           arrange(desc(n)) %>%
+                                                                                           pull(name)), selected  = NULL),
                                      
                                      selectInput("choiceInfo", "Info to display", choice=c("Time screen" = 1,
                                                                                            "Episodes by season" = 2), selected  = NULL)
@@ -134,7 +138,20 @@ ui <- fluidPage(
                                    mainPanel(
                                      h2("Summary of the dataset"),
                                      verbatimTextOutput("sumEpisodes"),
-                                     plotOutput("plot1")
+                                     plotOutput("plot1", height = "auto")
+                                   )
+                                 )
+                                 
+                        ),
+                        tabPanel("Distributions",
+                                 sidebarLayout(
+                                   sidebarPanel(
+                                     radioButtons("distribution_type", "Distribution",
+                                                  c("Gender per house"="gender_per_house", "Survival per season"="survival_per_season")
+                                     )
+                                   ),
+                                   mainPanel(
+                                     plotOutput("distributionPlot", height = "auto")
                                    )
                                  )
                                  
@@ -251,6 +268,9 @@ server <- function(input, output, session) {
       scale_x_discrete(guide = guide_axis(angle = 30))+
       scale_y_continuous(breaks = seq(0,13,by = 2))+
       labs(title = "Best killers", x="", y="Number of victims")
+  },
+  height = function() {
+    session$clientData$output_bestKillersPlot_width
   })
   
   
@@ -281,6 +301,9 @@ server <- function(input, output, session) {
       theme(panel.background = element_rect(fill ="lightgray" ,color=NA), plot.title = element_text(size=18, color=colsymbol, face="bold", hjust = 0.5))+
       labs(title = "Number of deaths by episodes", x="Episode number", y="Number of deaths")
     
+  },
+  height = function() {
+    session$clientData$output_deathsByEpisodes_width
   })
   
   output$sumEpisodes <- renderPrint({
@@ -306,8 +329,9 @@ server <- function(input, output, session) {
       ggplot(jstime) + 
         geom_line(aes(x=episodeId,y=time))+
         theme_bw()+
-        xlab("episod")+ylab("time")+
-        ggtitle("Time screen")
+        xlab("episode")+ylab("time")+
+        ggtitle("Time screen") +
+        theme(plot.title = element_text(size=18, color= colsymbol, face="bold", hjust = 0.5))
     } else {
       jstime = appearances %>% filter(name==input$choiceName) %>%
         left_join(scenes) %>% select(name, episodeId) %>%
@@ -323,11 +347,55 @@ server <- function(input, output, session) {
         theme_bw()+
         xlab("season")+ 
         scale_x_continuous(breaks = c(1:8), labels = c(1:8), limits = c(NA,9)) + 
-        ggtitle("Episode appearance by seasons") 
-      
+        ggtitle("Episode appearance by seasons") +
+        theme(plot.title = element_text(size=18, color= colsymbol, face="bold", hjust = 0.5))
     }
     
+  },
+  height = function() {
+    session$clientData$output_plot1_width
   })
+  
+  output$distributionPlot <- renderPlot({
+    if(input$distribution_type == "gender_per_house"){
+      nbFemalePerHouse <- characters %>% filter(sex == "female") %>% group_by(house, sex) %>% 
+        summarize(nb = n())%>% filter(!is.na(house))
+      nbMalePerHouse <- characters %>% filter(sex == "male") %>% group_by(house, sex) %>% 
+        summarize(nb = n())%>% filter(!is.na(house))
+      data <- rbind(nbFemalePerHouse,nbMalePerHouse)
+      
+      ggplot(data, aes(x = house,  y = nb, fill=sex)) + 
+        geom_bar(position="stack", stat="identity")+
+        scale_fill_brewer("Gender",palette = "Spectral")+
+        theme_minimal()+
+        theme(panel.background = element_rect(fill ="lightgray" ,color=NA), plot.title = element_text(size=18, color= colsymbol, face="bold", hjust = 0.5))+
+        scale_x_discrete(guide = guide_axis(angle = 30))+
+        scale_y_continuous(breaks = seq(0,13,by = 100))+
+        labs(title = "Gender distribution per houses", x="", y="")
+    }else if(input$distribution_type == "survival_per_season"){
+      numberSeasons = c(1, 2, 3, 5, 6, 8)
+      # nbCharacters = countNotNumeric(characters$name)
+      nbCharacters = characters %>% filter(!is.na(name)) %>% nrow()
+      nbSurv <- scenes %>% group_by(episodeId) %>% summarize(nb = (nbCharacters - sum(nbdeath))) %>% left_join(episodes)
+      survivalPerSeason <- nbSurv %>% filter(seasonNum %in% numberSeasons)
+      survivals <- cbind.data.frame("Season" = survivalPerSeason$seasonNum,"Survivals" = survivalPerSeason$nb)
+      dfs <- survivals %>% group_by(Season) %>% summarise(Survivals = sum(Survivals))
+      propSurvivals <- dfs %>% mutate(Prop = Survivals/nbCharacters)
+      
+      ggplot(propSurvivals, aes(x="", y=Prop, fill=factor(Season))) + geom_bar(stat="identity", width=1)+
+        coord_polar("y", start=0) + geom_text(aes(label = paste0(round(Prop), "%")), position = position_stack(vjust = 0.5))+
+        scale_fill_manual(values=c("#55DDE0", "#33658A", "#2F4858", "#F6AE2D", "#F26419", "#999999", "#B833FF", "#FF3333"))+ 
+        labs(x = NULL, y = NULL, fill = NULL, title = "Survivals distribution per season")+
+        theme_classic() + theme(axis.line = element_blank(),
+                                axis.text = element_blank(),
+                                axis.ticks = element_blank(),
+                                plot.title = element_text(size=18, color= colsymbol, face="bold", hjust = 0.5))
+    }
+  },
+  height = function() {
+    session$clientData$output_distributionPlot_width
+  })
+      
   
   output$landscapePlot <- renderPlot({
     if(input$landscape_type == "surface_area"){

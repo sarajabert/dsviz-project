@@ -1,8 +1,11 @@
+#!/usr/bin/Rscript
+
 library(shiny)
 library(readr)
 library(dplyr)
 library(ggplot2)
-library(jwutil)
+# library(jwutil)
+library(tcltk)
 
 
 appearances = read_csv("./data/appearances.csv")
@@ -16,6 +19,7 @@ nbMalePerHouse <- characters %>% filter(sex == "male") %>% group_by(house, sex) 
   summarize(nb = n())%>% filter(!is.na(house))
 data <- rbind(nbFemalePerHouse,nbMalePerHouse)
 
+X11()
 ggplot(data, aes(x = house,  y = nb, fill=sex)) + 
   geom_bar(position="stack", stat="identity")+
   scale_fill_brewer("Gender",palette = "Spectral")+
@@ -27,14 +31,16 @@ ggplot(data, aes(x = house,  y = nb, fill=sex)) +
 
 
 numberSeasons = c(1, 2, 3, 5, 6, 8)
-nbCharacters = countNotNumeric(characters$name)
+  
+# nbCharacters = countNotNumeric(characters$name)
+nbCharacters = characters %>% filter(!is.na(name)) %>% nrow()
 nbSurv <- scenes %>% group_by(episodeId) %>% summarize(nb = (nbCharacters - sum(nbdeath))) %>% left_join(episodes)
 survivalPerSeason <- nbSurv %>% filter(seasonNum %in% numberSeasons)
 survivals <- cbind.data.frame("Season" = survivalPerSeason$seasonNum,"Survivals" = survivalPerSeason$nb)
 dfs <- survivals %>% group_by(Season) %>% summarise(Survivals = sum(Survivals))
 propSurvivals <- dfs %>% mutate(Prop = Survivals/nbCharacters)
 
-
+X11()
 ggplot(propSurvivals, aes(x="", y=Prop, fill=factor(Season))) + geom_bar(stat="identity", width=1)+
   coord_polar("y", start=0) + geom_text(aes(label = paste0(round(Prop), "%")), position = position_stack(vjust = 0.5))+
   scale_fill_manual(values=c("#55DDE0", "#33658A", "#2F4858", "#F6AE2D", "#F26419", "#999999", "#B833FF", "#FF3333"))+ 
@@ -44,7 +50,7 @@ ggplot(propSurvivals, aes(x="", y=Prop, fill=factor(Season))) + geom_bar(stat="i
                             axis.ticks = element_blank(),
                             plot.title = element_text(hjust = 0.5, color = "#666666"))
 
-
+capture <- tk_messageBox(message="")
 
 
 
