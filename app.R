@@ -370,7 +370,7 @@ server <- function(input, output, session) {
         theme_minimal()+
         theme(panel.background = element_rect(fill ="lightgray" ,color=NA), plot.title = element_text(size=18, color= colsymbol, face="bold", hjust = 0.5))+
         scale_x_discrete(guide = guide_axis(angle = 30))+
-        scale_y_continuous(breaks = seq(0,13,by = 100))+
+        scale_y_continuous(breaks = seq(0,25,by = 2))+
         labs(title = "Gender distribution per houses", x="", y="")
     }else if(input$distribution_type == "survival_per_season"){
       numberSeasons = c(1, 2, 3, 5, 6, 8)
@@ -385,7 +385,7 @@ server <- function(input, output, session) {
       ggplot(propSurvivals, aes(x="", y=Prop, fill=factor(Season))) + geom_bar(stat="identity", width=1)+
         coord_polar("y", start=0) + geom_text(aes(label = paste0(round(Prop), "%")), position = position_stack(vjust = 0.5))+
         scale_fill_manual(values=c("#55DDE0", "#33658A", "#2F4858", "#F6AE2D", "#F26419", "#999999", "#B833FF", "#FF3333"))+ 
-        labs(x = NULL, y = NULL, fill = NULL, title = "Survivals distribution per season")+
+        labs(x = NULL, y = NULL, fill = "Season number", title = "Survivals distribution per season")+
         theme_classic() + theme(axis.line = element_blank(),
                                 axis.text = element_blank(),
                                 axis.ticks = element_blank(),
