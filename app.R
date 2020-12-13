@@ -130,8 +130,8 @@ ui <- fluidPage(
                                                                                            arrange(desc(n)) %>%
                                                                                            pull(name)), selected  = NULL),
                                      
-                                     selectInput("choiceInfo", "Info to display", choice=c("Time screen" = 1,
-                                                                                           "Episodes by season" = 2), selected  = NULL)
+                                     selectInput("choiceInfo", "Info to display", choice=c("Episodes by season" = 1,
+                                                                                           "Time screen" = 2), selected  = NULL)
                                      
                                      
                                    ),
@@ -319,20 +319,7 @@ server <- function(input, output, session) {
   })
   
   output$plot1 <- renderPlot({
-    
-    if(input$choiceInfo == 1){
-      jstime = appearances %>% filter(name==input$choiceName) %>% 
-        left_join(scenes) %>% 
-        group_by(episodeId) %>% 
-        summarise(time=sum(duration))
-      
-      ggplot(jstime) + 
-        geom_line(aes(x=episodeId,y=time))+
-        theme_bw()+
-        xlab("episode")+ylab("time")+
-        ggtitle("Time screen") +
-        theme(plot.title = element_text(size=18, color= colsymbol, face="bold", hjust = 0.5))
-    } else {
+     if(input$choiceInfo == 1){
       jstime = appearances %>% filter(name==input$choiceName) %>%
         left_join(scenes) %>% select(name, episodeId) %>%
         left_join(episodes)%>% 
@@ -347,8 +334,33 @@ server <- function(input, output, session) {
         theme_bw()+
         xlab("season")+ 
         scale_x_continuous(breaks = c(1:8), labels = c(1:8), limits = c(NA,9)) + 
-        ggtitle("Episode appearance by seasons") +
-        theme(plot.title = element_text(size=18, color= colsymbol, face="bold", hjust = 0.5))
+        ggtitle("Episode appearance by seasons") 
+      
+      
+    } else {
+      jstime = appearances %>% filter(name==input$choiceName) %>% 
+        left_join(scenes) %>% 
+        group_by(episodeId) %>% 
+        summarise(time=sum(duration))
+      
+      
+      if (nrow(jstime) == 1) {
+        ggplot(jstime) + 
+          geom_point(aes(x=episodeId,y=time), size = 4)+
+          theme_bw()+
+          xlab("episod")+ylab("time")+
+          #    expand_limits(x = 0, y = 0)+
+          ggtitle("Time screen")
+      } else {
+        ggplot(jstime, aes(x=episodeId,y=time, color=time)) + 
+          geom_line(size = 1.2)+
+          theme_bw()+
+          xlab("episod")+ylab("time")+
+          scale_x_continuous(breaks = round(seq(min(jstime$episodeId), max(jstime$episodeId), by=5), 0))+
+          ggtitle("Time screen") +
+          geom_point(size = 3) +
+          scale_color_gradient(low="blue", high="red")
+      }
     }
     
   },
